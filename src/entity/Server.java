@@ -69,4 +69,13 @@ public class Server {
 	public void setListCommitedLog(List<Log> listCommitedLog) {
 		this.listCommitedLog = listCommitedLog;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		Server that = (Server) obj;
+		if(this.ipAddress == that.ipAddress) {
+			return true;
+		}
+		return false;
+	}
 }

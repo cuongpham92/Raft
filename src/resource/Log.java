@@ -14,6 +14,7 @@ public class Log implements Serializable{
 		this.command = command;
 		this.state = state;
 	}
+	
 	public int getLogIndex() {
 		return logIndex;
 	}
