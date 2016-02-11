@@ -23,6 +23,7 @@ public class ClientNode extends Thread {
 	private BufferedWriter log;
 	private String module;
 	private String command;
+
 	public ClientNode(String myIPAddress, int myPort, String module, int numOfNodes, int numOfClients)
 			throws IOException {
 		this.myIPAddress = myIPAddress;
@@ -33,7 +34,7 @@ public class ClientNode extends Thread {
 		this.module = module;
 		this.numOfClients = numOfClients;
 		StringBuilder cmd = new StringBuilder();
-		for(int i = 0; i < 1024; i++) {
+		for (int i = 0; i < 1024; i++) {
 			cmd.append('a');
 		}
 		command = cmd.toString();
@@ -43,8 +44,8 @@ public class ClientNode extends Thread {
 		}
 
 		if (module.equals("throughput")) {
-			log = new BufferedWriter(
-					new OutputStreamWriter(new FileOutputStream("throughput_nodes" + numOfNodes + "_clients_" + numOfClients, true), "UTF-8"));
+			log = new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream("throughput_nodes" + numOfNodes + "_clients_" + numOfClients, true), "UTF-8"));
 		}
 
 	}
@@ -88,32 +89,36 @@ public class ClientNode extends Thread {
 	public class ProcessMessage_throughput extends Thread {
 		@Override
 		public void run() {
-			int numOfTries = 0;
-			while (numOfTries < 1) {
+			int numOfTries = 1;
+			int recv = 0;
+			while (numOfTries <= 1) {
 				int sendCount = 0;
 				long start = System.nanoTime();
+				
 				while (System.nanoTime() - start < 1000000000) {
-					System.out.println("Client sent " + sendCount + "requests " + new Date());
-					sendTime = System.currentTimeMillis();
 					try {
-						for (int i = sendCount; i < sendCount + numOfClients; i++) {
-							UDPProtocol.sendUnicastString(unicastSocket, command,
-									InetAddress.getByName("192.168.24.50"), 4446);
+						if (sendCount < 50) {
+							for (int i = sendCount; i < sendCount + numOfClients; i++) {
+								System.out.println("Client sent " + i + "requests " + new Date());
+								UDPProtocol.sendUnicastString(unicastSocket, command,
+										InetAddress.getByName("localhost"), 4446);
+							}
+							sendCount += numOfClients;
 						}
-						sendCount += numOfClients;
-						DatagramPacket receiveResult = UDPProtocol.receiveUnicast(unicastSocket);
+						//DatagramPacket receiveResult = UDPProtocol.receiveUnicast(unicastSocket);
+						
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
-				try {
-					log.write(sendCount + "");
-					log.newLine();
-					log.flush();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				// try {
+				// log.write(sendCount + "");
+				// log.newLine();
+				// log.flush();
+				// } catch (IOException e) {
+				// // TODO Auto-generated catch block
+				// e.printStackTrace();
+				// }
 				numOfTries++;
 			}
 		}

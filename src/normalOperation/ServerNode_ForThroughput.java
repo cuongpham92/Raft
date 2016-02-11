@@ -28,6 +28,7 @@ public class ServerNode_ForThroughput extends Thread {
 	private List<String> listCommands;
 	private int numOfClients;
 	private int firstIndex;
+	private int numOfProcessedCommands;
 	// local experiment, different servers distinguish from each other by their
 	// ports
 	private Map<String, Boolean> listAcks;
@@ -42,21 +43,22 @@ public class ServerNode_ForThroughput extends Thread {
 		listCommands = new ArrayList<>();
 		this.numOfClients = numOfClients;
 		this.firstIndex = 0;
-		if (myIPAddress.equals("192.168.24.50")) {
-			isLeader = true;
-		}
-		/*if (myPortforServer == 4447) {
+		this.numOfProcessedCommands = 0;
+		/*if (myIPAddress.equals("localhost")) {
 			isLeader = true;
 		}*/
+		if (myPortforServer == 4447) {
+			isLeader = true;
+		}
 		setTopology(numOfNodes);
 	}
 
 	public void setTopology(int numOfNodes) {
-		final Server server1 = new Server("192.168.24.50", 4446, 4447);
-		final Server server2 = new Server("192.168.24.51", 4446, 4447);
-		final Server server3 = new Server("192.168.24.52", 4446, 4447);
-		final Server server4 = new Server("192.168.24.53", 4446, 4447);
-		final Server server5 = new Server("192.168.24.54", 4446, 4447);
+		final Server server1 = new Server("localhost", 4446, 4447);
+		final Server server2 = new Server("localhost", 4448, 4449);
+		final Server server3 = new Server("localhost", 4450, 4451);
+		final Server server4 = new Server("localhost", 4453, 4452);
+		final Server server5 = new Server("localhost", 4454, 4455);
 
 		if (numOfNodes == 1) {
 			listServers = new ArrayList<Server>() {
@@ -101,35 +103,6 @@ public class ServerNode_ForThroughput extends Thread {
 		}
 	}
 
-	/*public void setTopology(int numOfNodes) {
-		final Server server1 = new Server("localhost", 4446, 4447);
-		final Server server2 = new Server("localhost", 4448, 4449);
-		final Server server3 = new Server("localhost", 4450, 4451);
-
-		if (numOfNodes == 1) {
-			listServers = new ArrayList<Server>() {
-				{
-					add(server1);
-				}
-			};
-		} else if (numOfNodes == 2) {
-			listServers = new ArrayList<Server>() {
-				{
-					add(server1);
-					add(server2);
-				}
-			};
-		} else if (numOfNodes == 3) {
-			listServers = new ArrayList<Server>() {
-				{
-					add(server1);
-					add(server2);
-					add(server3);
-				}
-			};
-		}
-	}*/
-
 	public void sendAppendEntryLeaderSide(List<String> listRequests, int firstIndex) {
 		try {
 			FrameMessage frameMessage;
@@ -141,7 +114,6 @@ public class ServerNode_ForThroughput extends Thread {
 					me.getListLog().add(newLog);
 				}
 			} else {
-				System.out.println("aaaa at " + new Date());
 				for (String s : listRequests) {
 					Log newLog = new Log(me.getListLog().size(), me.getTerm(), s, "uncommited");
 					me.getListLog().add(newLog);
@@ -163,7 +135,9 @@ public class ServerNode_ForThroughput extends Thread {
 
 				}
 			} else {
-				UDPProtocol.sendUnicastString(socketforClient, "done", InetAddress.getByName("192.168.24.49"), 4445);
+				UDPProtocol.sendUnicastString(socketforClient, "done", InetAddress.getByName("localhost"), 4445);
+				numOfProcessedCommands ++;
+				System.out.println("number of processed commands1: " + numOfProcessedCommands);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -190,8 +164,10 @@ public class ServerNode_ForThroughput extends Thread {
 						for (int i = me.getListLog().size() - numOfClients; i < me.getListLog().size(); i++) {
 							me.getListLog().get(i).setState("committed");
 						}
-						UDPProtocol.sendUnicastString(socketforClient, "done", InetAddress.getByName("192.168.24.49"),
+						UDPProtocol.sendUnicastString(socketforClient, "done", InetAddress.getByName("localhost"),
 								4445);
+						numOfProcessedCommands ++;
+						System.out.println(numOfProcessedCommands);
 						for (Server s : listServers) {
 							if (!me.equals(s)) {
 								UDPProtocol.sendUnicastObject(socketforServer,
@@ -243,10 +219,10 @@ public class ServerNode_ForThroughput extends Thread {
 							+ " logs with first index is " + commitMes.getLogIndex());
 				}
 
-			} catch (SocketTimeoutException e) {
-				// e.printStackTrace();
-				System.out.println("Process" + me.getIpAddress() + ": socket timeout exception, elect new leader at "
-						+ new Date());
+//			} catch (SocketTimeoutException e) {
+//				// e.printStackTrace();
+//				System.out.println("Process" + me.getIpAddress() + ": socket timeout exception, elect new leader at "
+//						+ new Date());
 			} catch (Exception e) {
 				System.out.println("Process" + me.getIpAddress() + " waiting");
 			}
@@ -261,17 +237,21 @@ public class ServerNode_ForThroughput extends Thread {
 			String command = "";
 			CommunicationBetweenServers communicationBetweenServers = new CommunicationBetweenServers();
 			communicationBetweenServers.start();
+			int  x  = 0;
 			while (true) {
 				DatagramPacket receivePacket = UDPProtocol.receiveUnicast(socketforClient);
-				System.out.println("message size: " + receivePacket.getData().length);
+				//System.out.println("message size: " + receivePacket.getData().length);
 				command = new String(receivePacket.getData()).trim();
-				System.out.println(command);
-				System.out.println("process" + me.getIpAddress() + " received command=" + command + " from client at "
-						+ new Date());
+				//System.out.println(command);
+				//System.out.println("process" + me.getIpAddress() + " received command=" + command + " from client at "
+				//		+ new Date());
+				System.out.println(x++);
 				synchronized (listCommands) {
 					listCommands.add(command);
+					System.out.println("list command size: " + listCommands.size());
+
+					
 				}
-				System.out.println(listCommands.size());
 			}
 		}
 		// follower part
@@ -290,10 +270,9 @@ public class ServerNode_ForThroughput extends Thread {
 				synchronized (listCommands) {
 					if (listCommands.size() != 0) {
 						if (listCommands.size() - firstIndex > 0) {
-							System.out.println("Process" + me.getIpAddress() + " starts sending " + numOfClients
-									+ " messages with first index is " + firstIndex + " at " + new Date());
 							listRequests = listCommands.subList(firstIndex, firstIndex + numOfClients > listCommands.size() ? listCommands.size() : firstIndex + numOfClients);
-							System.out.println(listRequests.size());
+							System.out.println("Process" + me.getIpAddress() + " starts sending " + listRequests.size()
+									+ " messages with first index is " + firstIndex + " at " + new Date());
 							sendAppendEntryLeaderSide(listRequests, firstIndex);
 							if (listServers.size() > 1) {
 								processAckLeaderSide();

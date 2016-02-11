@@ -73,7 +73,7 @@ public class Server {
 	@Override
 	public boolean equals(Object obj) {
 		Server that = (Server) obj;
-		if(this.ipAddress == that.ipAddress) {
+		if(this.portforServer == that.portforServer) {
 			return true;
 		}
 		return false;
